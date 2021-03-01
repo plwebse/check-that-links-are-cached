@@ -29,15 +29,53 @@ app.get("/check/", function (req, res) {
         }
 
         Promise.all(list).then((out) => {
-            console.log(out);
-            res.json(out);
+            res.send(print(out))
         })
     });
 
     return;
 });
 
-app.listen(3001)
+app.listen(3001);
+
+function print(json){
+    
+    let tableRows = "";
+
+    json.forEach(element => {
+        const url = element.url
+        const cacheControl = element.headers["cache-control"] ? JSON.stringify(element.headers["cache-control"]) : "";
+        const via = element.headers["via"] ? JSON.stringify(element.headers["via"]) : "";
+        const xCache = element.headers["x-cache"] ? JSON.stringify(element.headers["x-cache"]) : "";
+        tableRows += `
+        <tr>
+            <td>${url}</td>
+            <td>
+            ${cacheControl} <br> 
+            ${via} <br> 
+            ${xCache}
+            </td>
+            
+        </tr>
+        ` 
+    });
+
+    let html = `
+        <html>
+            <head></head>
+            <body>
+                <form action="/check/" method="GET">
+                    <input type="url" name="url" />
+                    <input type="submit" value="Check url" />
+                <form>
+            </body>
+            <table>
+                ${tableRows}
+            </table>
+        </html>
+    `
+    return html;
+}
 
 function findLinksInHtml(html) {
     dom = new JSDOM(html);
