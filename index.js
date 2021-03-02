@@ -1,12 +1,14 @@
 const express = require("express");
+const querystring = require("querystring");
 const fetch = require('node-fetch');
-//const { response } = require("express");
 const jsdom = require("jsdom");
 const { JSDOM } = jsdom;
 
+
 const app = express()
 app.get("/", function (req, res) {
-    let html = `
+    const error = req.query.error
+    const html = `
         <html>
             <head></head>
             <body>
@@ -31,6 +33,10 @@ app.get("/check/", function (req, res) {
         Promise.all(list).then((out) => {
             res.send(print(out))
         })
+    }).catch(err => {
+        console.log(err);
+        let errorMsg = querystring.stringify({"error": err});
+        res.redirect(301, '/?' + errorMsg);
     });
 
     return;
@@ -69,7 +75,7 @@ function print(json){
                     <input type="submit" value="Check url" />
                 <form>
             </body>
-            <table>
+            <table border="1">
                 ${tableRows}
             </table>
         </html>
@@ -78,41 +84,37 @@ function print(json){
 }
 
 function findLinksInHtml(html) {
-    dom = new JSDOM(html);
+    const dom = new JSDOM(html);
     const nodeList = dom.window.document.querySelectorAll("a");
     let list = [];
-    nodeList.forEach(function (nodeItem) {
-        if ((nodeItem.href + "").startsWith("http")) {
-            list.push(nodeItem.href);
-            console.log(nodeItem.href);
-        }
-    });
+    nodeList.forEach((nodeItem) => {
+            if ((nodeItem.href + "").startsWith("http")) {
+                list.push(nodeItem.href);                
+            }
+        });
 
     return list;
 }
 
 function getHeadersFromUrl(url) {
-    return new Promise(function (resolve, reject) {
-        fetch(url).then(res1 => {
-            console.log(res1.headers.raw());
-            resolve({ url: url, headers: res1.headers.raw() });
-        }).catch(err => {
-            console.error(err);
-            resolve({ url: url, headers: {}});
-
+    return new Promise((resolve, reject) => {
+            fetch(url).then(res => {
+                resolve({ url, headers: res.headers.raw() });
+            }).catch(err => {
+                console.error(err);
+                resolve({ url, headers: {} });
+            });
         });
-    });
 }
 
 function getContentFromUrl(url) {
-    return new Promise(function (resolve, reject) {
-        fetch(url).then(res1 => {
-            resolve(res1.text());
-        }).catch(err => {
-            console.error(err);
-            reject(Error("It broke"));
+    return new Promise((resolve, reject) => {
+            fetch(url).then(res => {
+                resolve(res.text());
+            }).catch(err => {                
+                reject(Error(err));
+            });
         });
-    });
 }
 
 
