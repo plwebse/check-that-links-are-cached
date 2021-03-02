@@ -3,23 +3,13 @@ const querystring = require("querystring");
 const fetch = require('node-fetch');
 const jsdom = require("jsdom");
 const { JSDOM } = jsdom;
+const app = express();
 
 
-const app = express()
+
 app.get("/", function (req, res) {
-    const error = req.query.error
-    const html = `
-        <html>
-            <head></head>
-            <body>
-                <form action="/check/" method="GET">
-                    <input type="url" name="url" />
-                    <input type="submit" value="Check url" />
-                <form>
-            </body>
-        </html>
-    `
-    res.send(html);
+    const error = req.query.error;; // todo
+    res.send(createHtmlDocument('',''));
 });
 
 app.get("/check/", function (req, res) {
@@ -31,11 +21,11 @@ app.get("/check/", function (req, res) {
         }
 
         Promise.all(list).then((out) => {
-            res.send(print(out))
+            res.send(print(out, req.query.url));
         })
     }).catch(err => {
         console.log(err);
-        let errorMsg = querystring.stringify({"error": err});
+        let errorMsg = querystring.stringify({ "error": err });
         res.redirect(301, '/?' + errorMsg);
     });
 
@@ -44,8 +34,8 @@ app.get("/check/", function (req, res) {
 
 app.listen(3001);
 
-function print(json){
-    
+function print(json, requestedUrl) {
+
     let tableRows = "";
 
     json.forEach(element => {
@@ -61,26 +51,11 @@ function print(json){
             ${via} <br> 
             ${xCache}
             </td>
-            
         </tr>
-        ` 
+        `
     });
 
-    let html = `
-        <html>
-            <head></head>
-            <body>
-                <form action="/check/" method="GET">
-                    <input type="url" name="url" />
-                    <input type="submit" value="Check url" />
-                <form>
-            </body>
-            <table border="1">
-                ${tableRows}
-            </table>
-        </html>
-    `
-    return html;
+    return html = createHtmlDocument(`<br><table border="1" width="100%">${tableRows}</table>`, requestedUrl);
 }
 
 function findLinksInHtml(html) {
@@ -88,34 +63,58 @@ function findLinksInHtml(html) {
     const nodeList = dom.window.document.querySelectorAll("a");
     let list = [];
     nodeList.forEach((nodeItem) => {
-            if ((nodeItem.href + "").startsWith("http")) {
-                list.push(nodeItem.href);                
-            }
-        });
+        if ((nodeItem.href + "").startsWith("http")) {
+            list.push(nodeItem.href);
+        }
+    });
 
     return list;
 }
 
 function getHeadersFromUrl(url) {
     return new Promise((resolve, reject) => {
-            fetch(url).then(res => {
-                resolve({ url, headers: res.headers.raw() });
-            }).catch(err => {
-                console.error(err);
-                resolve({ url, headers: {} });
-            });
+        fetch(url).then(res => {
+            resolve({ url, headers: res.headers.raw() });
+        }).catch(err => {
+            console.error(err);
+            resolve({ url, headers: {} });
         });
+    });
 }
 
 function getContentFromUrl(url) {
     return new Promise((resolve, reject) => {
-            fetch(url).then(res => {
-                resolve(res.text());
-            }).catch(err => {                
-                reject(Error(err));
-            });
+        fetch(url).then(res => {
+            resolve(res.text());
+        }).catch(err => {
+            reject(Error(err));
         });
+    });
 }
 
+function createHtmlDocument(bodyHtml, url) {
+    const baseHtml = `
+<html>
+<head>
+<title>Check that are links are cached</title>
+</head>
+<body>
 
+<div style="max-width:1000px; ">
+<fieldset>
+<legend> Check that are links are cached </legend>
+<form action="/check/" method="GET">
+    <input type="url" name="url" value="${url}" />
+    <input type="submit" value="Check url" />
+<form>
+</fieldset>
+
+${bodyHtml}
+
+</div>
+</body>
+</html>
+`
+    return baseHtml;
+}
 
