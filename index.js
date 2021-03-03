@@ -5,31 +5,22 @@ const jsdom = require("jsdom");
 const { JSDOM } = jsdom;
 const app = express();
 
-
-
 app.get("/", function (req, res) {
-    const error = req.query.error;; // todo
-    res.send(createHtmlDocument('',''));
+    const error = req.query.error;
+    res.send(createHtmlDocument('', ''));
 });
 
 app.get("/check/", function (req, res) {
 
-    Promise.all([getContentFromUrl(req.query.url)]).then((out) => {
-        let list = [];
-        for (url of findLinksInHtml(out[0])) {
-            list.push(getHeadersFromUrl(url));
-        }
-
-        Promise.all(list).then((out) => {
-            res.send(print(out, req.query.url));
-        })
-    }).catch(err => {
-        console.log(err);
-        let errorMsg = querystring.stringify({ "error": err });
-        res.redirect(301, '/?' + errorMsg);
-    });
-
-    return;
+    getContentFromUrl(req.query.url)
+        .then((html) => {
+            return getHeadersFromUrls(findLinksInHtml(html));
+        }).then((json) => {
+            res.send(print(json, req.query.url));
+        }).catch(err => {
+            let errorMsg = querystring.stringify({ "error": err });
+            res.redirect(301, '/?' + errorMsg);
+        });
 });
 
 app.listen(3001);
@@ -37,7 +28,6 @@ app.listen(3001);
 function print(json, requestedUrl) {
 
     let tableRows = "";
-
     json.forEach(element => {
         const url = element.url
         const cacheControl = element.headers["cache-control"] ? JSON.stringify(element.headers["cache-control"]) : "";
@@ -71,6 +61,15 @@ function findLinksInHtml(html) {
     return list;
 }
 
+function getHeadersFromUrls(urls) {
+    let list = [];
+    urls.forEach(url => {
+        list.push(getHeadersFromUrl(url));
+    });
+
+    return Promise.all(list);
+}
+
 function getHeadersFromUrl(url) {
     return new Promise((resolve, reject) => {
         fetch(url).then(res => {
@@ -86,8 +85,9 @@ function getContentFromUrl(url) {
     return new Promise((resolve, reject) => {
         fetch(url).then(res => {
             resolve(res.text());
-        }).catch(err => {
-            reject(Error(err));
+        }).catch((err) => {
+            console.log("getContentFromUrl:" + err);
+            resolve("");
         });
     });
 }
