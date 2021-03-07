@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ctlac-app-deployment
+  labels:
+    app: ctlac-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ctlac-app
+  template:
+    metadata:
+      labels:
+        app: ctlac-app 
+    spec:
+      containers:
+      - name: ctlac-app
+        image: plwebse/ctlac
+        ports:
+        - containerPort: 8000
