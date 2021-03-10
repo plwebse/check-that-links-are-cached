@@ -10,27 +10,25 @@ const tableHeaderColumns = ["url", "msg"];
 tableHeaderColumns.push(...cacheHeaderNames);
 
 app.get("/", function (req, res) {
-    const error = req.query.error;
-    res.send(renderHtmlDocument('', '', error));
-});
+    if (req.query.url) {
+        console.log("/ " + req.query.url);
 
-app.get("/check/", function (req, res) {
-
-    console.log("/check/ " + req.query.url);
-
-    getContentFromUrl(req.query.url)
-        .then((html) => { 
-            console.log("/check/ reading content from" + req.query.url);           
-            return getHeadersFromUrls(findLinksInHtml(html));
-        }).then((json) => {   
-            console.log("/check/ printing result from" + req.query.url);         
-            res.send(printHtml(json, req.query.url));
-        }).catch(err => {    
-            console.log("/check/ error" + err);        
-            console.log(err);
-            errorMsg = querystring.stringify({"error": "fel" + err});
-            res.redirect(301, '/?' + errorMsg);
-        });
+        getContentFromUrl(req.query.url)
+            .then((html) => {
+                console.log("/ reading content from: " + req.query.url);
+                return getHeadersFromUrls(findLinksInHtml(html));
+            }).then((json) => {
+                console.log("/ printing result from: " + req.query.url);
+                res.send(printHtml(json, req.query.url));
+            }).catch(err => {
+                console.log("/ error: " + err);
+                console.log(err);
+                res.send(renderHtmlDocument('', req.query.url, err));
+            });
+    } else {
+        console.log("/ ");
+        res.send(renderHtmlDocument('', '', ''));
+    }
 });
 
 app.listen(8000);
@@ -48,7 +46,7 @@ function printHtml(json, requestedUrl) {
         tableRows += renderTableRow(values, "td");
     });
 
-    return renderHtmlDocument(`<br><table border="1" width="100%">${tableRows}</table>`, requestedUrl, "");
+    return renderHtmlDocument(`<br><table cellpadding="3" width="100%">${tableRows}</table>`, requestedUrl, "");
 }
 
 function findLinksInHtml(html) {
@@ -74,7 +72,7 @@ function getHeadersFromUrls(urls) {
 function getHeadersFromUrl(url) {
     return new Promise((resolve, reject) => {
         fetch(url).then(res => {
-            resolve({ url, headers: res.headers.raw(), msg: ''});
+            resolve({ url, headers: res.headers.raw(), msg: '' });
         }).catch(err => {
             console.error(err);
             resolve({ url, headers: {}, msg: err });
@@ -87,8 +85,7 @@ function getContentFromUrl(url) {
         fetch(url).then(res => {
             resolve(res.text());
         }).catch((err) => {
-            console.log("getContentFromUrl:" + err);
-            resolve("");
+            reject(err);
         });
     });
 }
@@ -99,26 +96,93 @@ function renderTableRow(values, htmlTag) {
 }
 
 function renderHtmlDocument(bodyHtml, url, errorMsg) {
+
+    const errorDiv = (errorMsg) ? "<div><b>" + errorMsg + "</b></div>" : "";
+    const bodyHtmlDiv = (bodyHtml) ? "<div>" + bodyHtml + "</div>" : "";
+
     const baseHtml = `
 <html>
 <head>
 <title>Check that are links are cached</title>
+<style>
+    fieldset {
+        border: 1px solid #ccc;
+    }
+
+    fieldset>legend {
+        text-transform:uppercase;
+        font-weight: bold;
+        font-size:20pt;
+    } 
+
+    table {
+        border: 1px solid #ccc;
+        border-collapse: collapse;
+        border-radius: 5px;
+        width:100%;        
+        
+    }
+
+    table th, table td {
+        border: 1px solid #ccc;
+        padding:5px;
+        margin:5px;               
+    }
+
+    table th {
+        background-color: #efefef;        
+        text-transform:uppercase;
+        text-align: left;
+
+    }    
+
+    input {
+        width:100%;
+        padding:5px;
+        margin:5px;               
+    }
+
+    input[type='submit'] {
+        text-transform:uppercase;
+        font-weight: bold;               
+    }
+
+    div#wrapper {
+        max-width:1200px;
+        margin:auto;
+        
+    }
+
+    div#wrapper > div {        
+        margin:10px 0;
+        overflow:hidden;        
+        overflow-x:auto;
+    }
+
+    div#wrapper > div > b {
+        color:#FF0000;
+        margin: 20px 10px;
+    }        
+
+
+
+</style>
 </head>
 <body>
 
-<div style="max-width:1000px; ">
+<div id="wrapper">
 
-${errorMsg}
+    <fieldset>
+    <legend> Check that are links are cached </legend>
+    <form action="/" method="GET">
+        <input type="url" name="url" value="${url}" />
+        <input type="submit" value="Check url" />
+    <form>
+    </fieldset>
 
-<fieldset>
-<legend> Check that are links are cached </legend>
-<form action="/check/" method="GET">
-    <input type="url" name="url" value="${url}" />
-    <input type="submit" value="Check url" />
-<form>
-</fieldset>
+    ${errorDiv}
 
-${bodyHtml}
+    ${bodyHtmlDiv}
 
 </div>
 </body>
