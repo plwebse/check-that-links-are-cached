@@ -8,6 +8,6 @@ run
 npm install 
 npm start
 
-go to localhost:3001
+go to localhost:8000
 
 
