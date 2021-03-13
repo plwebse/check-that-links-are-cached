@@ -20,7 +20,7 @@ app.get("/", function (req, res) {
                 console.log("/ printing result from: " + req.query.url);
                 res.send(printHtml(json, req.query.url));
             }).catch(err => {
-                console.log("/ error: " + err);                
+                console.log("/ error: " + err);
                 res.send(renderHtmlDocument('', req.query.url, err));
             });
     } else {
@@ -43,16 +43,11 @@ function getContentFromUrl(url) {
 
 function findLinksInHtml(html) {
     const dom = new JSDOM(html);
-    const nodeList = dom.window.document.querySelectorAll("a");
-    let list = [];
+    const nodeList = Array.from(dom.window.document.querySelectorAll("a"));
 
-    nodeList.forEach(nodeItem => {
-       if ((nodeItem.href + "").startsWith("http")) {
-           list.push(nodeItem.href);
-       }
-    });
-
-    return list;
+    return nodeList
+        .map(nodeItem => nodeItem.href)
+        .filter(href => href.startsWith("http"));
 }
 
 function getHeadersFromUrls(urls) {
@@ -70,14 +65,13 @@ function getHeadersFromUrl(url) {
     });
 }
 
-
 function printHtml(json, requestedUrl) {
 
     let tableRows = renderTableRow(tableHeaderColumns, "th");
 
     json.forEach(element => {
         const values = [element.url, element.msg];
-        
+
         cacheHeaderNames.forEach(cacheHeaderName => {
             values.push(element.headers[cacheHeaderName] ? JSON.stringify(element.headers[cacheHeaderName]) : "");
         });
@@ -88,16 +82,13 @@ function printHtml(json, requestedUrl) {
     return renderHtmlDocument(tableRows, requestedUrl);
 }
 
-
-
-
-
 function renderTableRow(values, htmlTag) {
     const str = values.map(value => "<" + htmlTag + ">" + value + "</" + htmlTag + ">").join("");
     return `<tr>${str}</tr>`
 }
 
 function renderHtmlDocument(bodyHtml, url, errorMsg) {
+    const urlValue = (url) ? url : '';
     const errorDiv = (errorMsg) ? "<div><b>" + errorMsg + "</b></div>" : "";
     const bodyHtmlDiv = (bodyHtml) ? `<div><table cellpadding="3" width="100%">${bodyHtml}</table> </div>` : "";
     const baseHtml = `
@@ -176,7 +167,7 @@ function renderHtmlDocument(bodyHtml, url, errorMsg) {
     <fieldset>
     <legend> Check that are links are cached </legend>
     <form action="/" method="GET">
-        <input type="url" name="url" value="${url}" />
+        <input type="url" name="url" value="${urlValue}" />
         <input type="submit" value="Check url" />
     <form>
     </fieldset>
