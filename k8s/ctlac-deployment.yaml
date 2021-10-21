@@ -19,3 +19,7 @@ spec:
         image: plwebse/ctlac
         ports:
         - containerPort: 8000
+      dnsPolicy: "None"
+      dnsConfig:
+        nameservers:
+        - 8.8.8.8
