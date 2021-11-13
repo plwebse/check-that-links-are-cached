@@ -1,3 +1,4 @@
+require('log-timestamp');
 const express = require("express");
 const fetch = require('node-fetch');
 const jsdom = require("jsdom");
@@ -9,6 +10,7 @@ const tableHeaderColumns = ["url", "msg"];
 tableHeaderColumns.push(...cacheHeaderNames);
 
 app.get("/", function (req, res) {
+    console.log("app get / start");
     if (req.query.url) {
         console.log("/ " + req.query.url);
 
@@ -18,18 +20,21 @@ app.get("/", function (req, res) {
                 return getHeadersFromUrls(findLinksInHtml(html));
             }).then((json) => {
                 console.log("/ printing result from: " + req.query.url);
-                res.send(printHtml(json, req.query.url));
+                res.status(200).send(printHtml(json, req.query.url));
             }).catch(err => {
                 console.log("/ error: " + err);
-                res.send(renderHtmlDocument('', req.query.url, err));
+                res.status(500).send(renderHtmlDocument('', req.query.url, err));
             });
     } else {
         console.log("/ ");
-        res.send(renderHtmlDocument());
+        res.status(200).send(renderHtmlDocument());
     }
+    console.log("app get / end");
 });
 
+console.log("starting app ");
 app.listen(8000);
+console.log("listning on 8000");
 
 function getContentFromUrl(url) {
     return new Promise((resolve, reject) => {

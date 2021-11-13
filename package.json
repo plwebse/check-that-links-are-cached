@@ -1,5 +1,5 @@
 {
-  "name": "check-that-links-are-cached",  
+  "name": "check-that-links-are-cached",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -13,6 +13,7 @@
   "dependencies": {
     "express": "^4.17.1",
     "jsdom": "^16.4.0",
+    "log-timestamp": "^0.3.0",
     "node-fetch": "^2.6.1"
   }
 }

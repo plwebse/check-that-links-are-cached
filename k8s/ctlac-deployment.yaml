@@ -5,21 +5,38 @@ metadata:
   labels:
     app: ctlac-app
 spec:
-  replicas: 1
+  replicas: 4
   selector:
     matchLabels:
       app: ctlac-app
   template:
     metadata:
       labels:
-        app: ctlac-app 
+        app: ctlac-app
     spec:
       containers:
-      - name: ctlac-app
-        image: plwebse/ctlac
-        ports:
-        - containerPort: 8000
+        - name: ctlac-app
+          image: plwebse/ctlac          
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8000              
+            initialDelaySeconds: 6
+            periodSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8000              
+            initialDelaySeconds: 6
+            periodSeconds: 3
+          resources:
+            limits:
+              memory: 200Mi
+            requests:
+              memory: 100Mi
+          ports:
+            - containerPort: 8000
       dnsPolicy: "None"
       dnsConfig:
         nameservers:
-        - 8.8.8.8
+          - 8.8.8.8

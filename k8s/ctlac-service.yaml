@@ -4,10 +4,10 @@ metadata:
   name: ctlac-app-service
 spec:
   selector:
-    app: ctlac-app 
-  type: LoadBalancer
+    app: ctlac-app
+  type: NodePort
   ports:
-  - protocol: TCP
-    port: 8000
-    targetPort: 8000
-    nodePort: 31110
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
+      nodePort: 31113
