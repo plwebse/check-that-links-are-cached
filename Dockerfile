@@ -1,13 +1,13 @@
-FROM node:16-bullseye
+FROM node:current-bullseye
 
 WORKDIR /usr/src/app
 
 COPY package*.json ./
 
-RUN npm install
+RUN npm ci --production
 
 COPY . .
 
 EXPOSE 8000
 
-CMD ["npm", "start"]
+CMD ["node", "index.js"]
